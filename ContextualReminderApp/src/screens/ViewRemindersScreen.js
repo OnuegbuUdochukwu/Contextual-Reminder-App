@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import { View, Text, FlatList, StyleSheet, Button, Alert, TextInput } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const ViewRemindersScreen = () => {
   const [reminders, setReminders] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentReminder, setCurrentReminder] = useState(null);
+  const [editedName, setEditedName] = useState("");
+  const [editedTime, setEditedTime] = useState("");
 
   // Fetch reminders from AsyncStorage
   const fetchReminders = async () => {
@@ -15,6 +19,51 @@ const ViewRemindersScreen = () => {
     } catch (error) {
       console.error("Error fetching reminders:", error);
     }
+  };
+
+  // Save updated reminders to AsyncStorage
+  const saveReminders = async (updatedReminders) => {
+    try {
+      await AsyncStorage.setItem("reminders", JSON.stringify(updatedReminders));
+      setReminders(updatedReminders);
+    } catch (error) {
+      console.error("Error saving reminders:", error);
+    }
+  };
+
+  // Delete a reminder
+  const deleteReminder = (index) => {
+    const updatedReminders = reminders.filter((_, i) => i !== index);
+    saveReminders(updatedReminders);
+  };
+
+  // Start editing a reminder
+  const startEditing = (index) => {
+    const reminder = reminders[index];
+    setCurrentReminder(index);
+    setEditedName(reminder.reminderName);
+    setEditedTime(reminder.time);
+    setIsEditing(true);
+  };
+
+  // Save edited reminder
+  const saveEdit = () => {
+    if (!editedName || !editedTime) {
+      Alert.alert("Error", "Please fill in all fields.");
+      return;
+    }
+
+    const updatedReminders = reminders.map((reminder, index) =>
+      index === currentReminder
+        ? { reminderName: editedName, time: editedTime }
+        : reminder
+    );
+
+    saveReminders(updatedReminders);
+    setIsEditing(false);
+    setCurrentReminder(null);
+    setEditedName("");
+    setEditedTime("");
   };
 
   // Fetch reminders when the screen loads
@@ -31,13 +80,36 @@ const ViewRemindersScreen = () => {
         <FlatList
           data={reminders}
           keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <View style={styles.reminderItem}>
               <Text style={styles.reminderText}>{item.reminderName}</Text>
               <Text style={styles.reminderTime}>{item.time}</Text>
+              <View style={styles.actions}>
+                <Button title="Edit" onPress={() => startEditing(index)} />
+                <Button title="Delete" onPress={() => deleteReminder(index)} color="red" />
+              </View>
             </View>
           )}
         />
+      )}
+      {isEditing && (
+        <View style={styles.editContainer}>
+          <Text style={styles.editTitle}>Edit Reminder</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Reminder Name"
+            value={editedName}
+            onChangeText={setEditedName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Time (e.g., 3:00 PM)"
+            value={editedTime}
+            onChangeText={setEditedTime}
+          />
+          <Button title="Save Changes" onPress={saveEdit} />
+          <Button title="Cancel" onPress={() => setIsEditing(false)} color="red" />
+        </View>
       )}
     </View>
   );
@@ -75,6 +147,33 @@ const styles = StyleSheet.create({
   reminderTime: {
     fontSize: 16,
     color: "#555",
+  },
+  actions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  editContainer: {
+    marginTop: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    backgroundColor: "#fff",
+    borderRadius: 5,
+  },
+  editTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+  input: {
+    height: 50,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 5,
+    marginBottom: 15,
+    paddingHorizontal: 10,
+    fontSize: 16,
   },
 });
 
