@@ -3,6 +3,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AddReminderScreen from "./AddReminderScreen";
 import ViewRemindersScreen from "./ViewRemindersScreen";
+import WeatherReminderScreen from "./screens/WeatherReminderScreen";
+import ReminderTemplateScreen from "./screens/ReminderTemplateScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -20,6 +22,9 @@ const App = () => {
           component={ViewRemindersScreen} 
           options={{ title: "Your Reminders" }}
         />
+        
+        <Stack.Screen name="Weather Reminder" component={WeatherReminderScreen} />
+        <Stack.Screen name="Templates" component={ReminderTemplateScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
